@@ -40,7 +40,7 @@ const Date = ({keyword}: {keyword: string}) => {
   return (
     <Container>
       {days.map(day => (
-        <Day data={day} keyword={keyword} />
+        <Day data={day} keyword={keyword} key={day.index} />
       ))}
     </Container>
   );
