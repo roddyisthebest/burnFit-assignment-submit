@@ -1,4 +1,6 @@
-import {Platform, Pressable, FlatList, Dimensions} from 'react-native';
+import {Platform, Pressable, Dimensions} from 'react-native';
+import {FlatList, GestureDetector, Gesture} from 'react-native-gesture-handler';
+
 import React, {useEffect, useState} from 'react';
 import styled from 'styled-components/native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -9,6 +11,7 @@ import {
   useDerivedValue,
   useSharedValue,
   scrollTo,
+  runOnJS,
 } from 'react-native-reanimated';
 
 const ContainerWrapper = styled.SafeAreaView`
@@ -66,23 +69,16 @@ const Calendar = () => {
   const aref = useAnimatedRef();
   const scroll = useSharedValue(0);
   const animation = useSharedValue(true);
+  const gestureDir = useSharedValue(0);
+  const disabledShareVal = useSharedValue(false);
+
   useDerivedValue(() => {
     scrollTo(aref, scroll.value, 0, animation.value);
   });
 
-  const [keyword, setKeyword] = useState(moment().format('YYYY-MM'));
-  const [keywords, setKeywords] = useState<string[]>([
-    moment(keyword).subtract(1, 'month').format('YYYY-MM'),
-    moment(keyword).format('YYYY-MM'),
-    moment(keyword).add(1, 'month').format('YYYY-MM'),
-  ]);
-  const [anotherKey, setAnotherKey] = useState(
-    moment().subtract(1, 'month').format('YYYY-MM'),
-  );
-
-  const [hideVisible, setHideVisible] = useState<boolean>(false);
-  const [flatListVisible, setFlatListVisible] = useState<boolean>(true);
-  const changeKeyword = (forward: boolean) => {
+  function changeKeyword(forward: boolean) {
+    disabledShareVal.value = true;
+    setDisabled(true);
     animation.value = true;
     if (forward) {
       scroll.value = 10000;
@@ -111,10 +107,37 @@ const Calendar = () => {
     }, 600);
     setTimeout(() => {
       setHideVisible(false);
-      console.log('fade-away');
+      setDisabled(false);
+      disabledShareVal.value = false;
     }, 700);
-  };
+  }
+  function callback(forward: boolean) {
+    'worklet';
+    runOnJS(changeKeyword)(forward);
+  }
 
+  const gesture = Gesture.Pan()
+    .onBegin(event => {
+      gestureDir.value = event.absoluteX;
+    })
+    .onEnd(event => {
+      gestureDir.value -= event.absoluteX;
+      !disabledShareVal.value && callback(gestureDir.value > 0);
+    });
+
+  const [keyword, setKeyword] = useState(moment().format('YYYY-MM'));
+  const [keywords, setKeywords] = useState<string[]>([
+    moment(keyword).subtract(1, 'month').format('YYYY-MM'),
+    moment(keyword).format('YYYY-MM'),
+    moment(keyword).add(1, 'month').format('YYYY-MM'),
+  ]);
+  const [anotherKey, setAnotherKey] = useState(
+    moment().subtract(1, 'month').format('YYYY-MM'),
+  );
+
+  const [hideVisible, setHideVisible] = useState<boolean>(false);
+  const [flatListVisible, setFlatListVisible] = useState<boolean>(true);
+  const [disabled, setDisabled] = useState<boolean>(false);
   useEffect(() => {
     setKeywords(() => {
       return [
@@ -135,6 +158,7 @@ const Calendar = () => {
       <Container os={Platform.OS}>
         <Header>
           <Pressable
+            disabled={disabled}
             onPress={() => {
               changeKeyword(false);
             }}>
@@ -144,6 +168,7 @@ const Calendar = () => {
             {keyword.split('-')[0]}년 {keyword.split('-')[1]}월
           </HeaderTitle>
           <Pressable
+            disabled={disabled}
             onPress={() => {
               changeKeyword(true);
             }}>
@@ -174,22 +199,26 @@ const Calendar = () => {
               <DayText>토</DayText>
             </Day>
           </DaysWrapper>
-          <HideWrapper>
-            {hideVisible ? (
-              <Date keyword={anotherKey} position={'absolute'} />
-            ) : null}
-            <FlatList
-              ref={aref}
-              data={keywords}
-              renderItem={renderItem}
-              horizontal
-              keyExtractor={(item, index) => index.toString()}
-              style={{opacity: flatListVisible ? 1 : 0}}
-              initialScrollIndex={1}
-              scrollEnabled={false}
-              showsHorizontalScrollIndicator={false}
-            />
-          </HideWrapper>
+          <GestureDetector
+            gesture={gesture}
+            userSelect={disabled ? 'auto' : 'none'}>
+            <HideWrapper>
+              {hideVisible ? (
+                <Date keyword={anotherKey} position={'absolute'} />
+              ) : null}
+              <FlatList
+                ref={aref}
+                data={keywords}
+                renderItem={renderItem}
+                horizontal
+                keyExtractor={(item, index) => index.toString()}
+                style={{opacity: flatListVisible ? 1 : 0}}
+                initialScrollIndex={1}
+                scrollEnabled={false}
+                showsHorizontalScrollIndicator={false}
+              />
+            </HideWrapper>
+          </GestureDetector>
         </Body>
       </Container>
     </ContainerWrapper>

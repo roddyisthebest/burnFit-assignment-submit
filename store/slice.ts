@@ -1,20 +1,20 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import moment from 'moment';
 export type initialStateProps = {
-  checkedDate: string;
+  checkedDay: string;
 };
 
 const {actions, reducer} = createSlice({
   name: 'redux',
   initialState: {
-    checkedDate: moment().format('YYYY-MM-DD'),
+    checkedDay: moment().format('YYYY-MM-DD'),
   },
   reducers: {
-    checkDate: (state, {payload: log}: PayloadAction<string>) => ({
-      checkedDate: log,
+    checkDay: (state, {payload: log}: PayloadAction<string>) => ({
+      checkedDay: log,
     }),
   },
 });
 
-export const {checkDate} = actions;
+export const {checkDay} = actions;
 export default reducer;

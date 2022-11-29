@@ -34,8 +34,8 @@ const Day = ({
   keyword: string;
 }) => {
   const dispatch = useDispatch();
-  const {checkedDate} = useSelector((state: initialStateProps) => ({
-    checkedDate: state.checkedDate,
+  const {checkedDay} = useSelector((state: initialStateProps) => ({
+    checkedDay: state.checkedDay,
   }));
 
   return (
@@ -49,9 +49,9 @@ const Day = ({
       width={Dimensions.get('window').width}
       disabled={!data.now}>
       <Container
-        isItChecked={checkedDate === `${keyword}-${data.day}` && data.now}>
+        isItChecked={checkedDay === `${keyword}-${data.day}` && data.now}>
         <ContainerText
-          isItChecked={checkedDate === `${keyword}-${data.day}`}
+          isItChecked={checkedDay === `${keyword}-${data.day}`}
           isItNowDate={data.now}>
           {data.day}
         </ContainerText>
