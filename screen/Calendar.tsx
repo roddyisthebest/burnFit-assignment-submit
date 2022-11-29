@@ -1,9 +1,15 @@
-import {Platform, Pressable} from 'react-native';
-import React, {useState} from 'react';
+import {Platform, Pressable, FlatList, Dimensions} from 'react-native';
+import React, {useEffect, useState} from 'react';
 import styled from 'styled-components/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Date from '../components/Date';
 import moment from 'moment';
+import {
+  useAnimatedRef,
+  useDerivedValue,
+  useSharedValue,
+  scrollTo,
+} from 'react-native-reanimated';
 
 const ContainerWrapper = styled.SafeAreaView`
   flex: 1;
@@ -29,7 +35,7 @@ const HeaderTitle = styled.Text`
   font-weight: 700;
 `;
 const Body = styled.View`
-  flex: 1;
+  /* flex: 1; */
 `;
 const DaysWrapper = styled.View`
   flex-direction: row;
@@ -52,15 +58,77 @@ const DayText = styled.Text`
   font-weight: 300;
 `;
 
+const HideWrapper = styled.View`
+  position: relative;
+`;
+
 const Calendar = () => {
+  const aref = useAnimatedRef();
+  const scroll = useSharedValue(0);
+  const animation = useSharedValue(true);
+  useDerivedValue(() => {
+    scrollTo(aref, scroll.value, 0, animation.value);
+  });
+
   const [keyword, setKeyword] = useState(moment().format('YYYY-MM'));
+  const [keywords, setKeywords] = useState<string[]>([
+    moment(keyword).subtract(1, 'month').format('YYYY-MM'),
+    moment(keyword).format('YYYY-MM'),
+    moment(keyword).add(1, 'month').format('YYYY-MM'),
+  ]);
+  const [anotherKey, setAnotherKey] = useState(
+    moment().subtract(1, 'month').format('YYYY-MM'),
+  );
+
+  const [hideVisible, setHideVisible] = useState<boolean>(false);
+  const [flatListVisible, setFlatListVisible] = useState<boolean>(true);
   const changeKeyword = (forward: boolean) => {
+    animation.value = true;
     if (forward) {
-      setKeyword(moment(keyword).add(1, 'month').format('YYYY-MM'));
+      scroll.value = 10000;
+      setAnotherKey(moment(keyword).add(1, 'month').format('YYYY-MM'));
+
+      setTimeout(() => {
+        animation.value = false;
+        setKeyword(moment(keyword).add(1, 'month').format('YYYY-MM'));
+      }, 500);
     } else {
-      setKeyword(moment(keyword).subtract(1, 'month').format('YYYY-MM'));
+      scroll.value = 0;
+      setAnotherKey(moment(keyword).subtract(1, 'month').format('YYYY-MM'));
+
+      setTimeout(() => {
+        animation.value = false;
+        setKeyword(moment(keyword).subtract(1, 'month').format('YYYY-MM'));
+      }, 500);
     }
+
+    setTimeout(() => {
+      setHideVisible(true);
+      setFlatListVisible(false);
+    }, 300);
+    setTimeout(() => {
+      setFlatListVisible(true);
+    }, 600);
+    setTimeout(() => {
+      setHideVisible(false);
+      console.log('fade-away');
+    }, 700);
   };
+
+  useEffect(() => {
+    setKeywords(() => {
+      return [
+        moment(keyword).subtract(1, 'month').format('YYYY-MM'),
+        moment(keyword).format('YYYY-MM'),
+        moment(keyword).add(1, 'month').format('YYYY-MM'),
+      ];
+    });
+    scroll.value = Dimensions.get('window').width - 40;
+  }, [keyword, scroll]);
+
+  const renderItem = ({item, index}: {item: string; index: number}) => (
+    <Date key={index} keyword={item} position={'relative'} />
+  );
 
   return (
     <ContainerWrapper>
@@ -106,7 +174,22 @@ const Calendar = () => {
               <DayText>토</DayText>
             </Day>
           </DaysWrapper>
-          <Date keyword={keyword} />
+          <HideWrapper>
+            {hideVisible ? (
+              <Date keyword={anotherKey} position={'absolute'} />
+            ) : null}
+            <FlatList
+              ref={aref}
+              data={keywords}
+              renderItem={renderItem}
+              horizontal
+              keyExtractor={(item, index) => index.toString()}
+              style={{opacity: flatListVisible ? 1 : 0}}
+              initialScrollIndex={1}
+              scrollEnabled={false}
+              showsHorizontalScrollIndicator={false}
+            />
+          </HideWrapper>
         </Body>
       </Container>
     </ContainerWrapper>

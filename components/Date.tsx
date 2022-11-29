@@ -2,13 +2,26 @@ import React, {useEffect, useState} from 'react';
 import styled from 'styled-components/native';
 import moment from 'moment';
 import Day from './Day';
-const Container = styled.View`
-  flex: 1;
+import {Dimensions} from 'react-native';
+const Container = styled.View<{
+  width: number;
+  position: 'relative' | 'absolute';
+}>`
   flex-wrap: wrap;
   flex-direction: row;
+  width: ${props => props.width - 40}px;
+  background-color: transparent;
+  position: ${props => props.position};
+  z-index: ${props => (props.position === 'absolute' ? 1000 : 1)};
 `;
 
-const Date = ({keyword}: {keyword: string}) => {
+const Date = ({
+  keyword,
+  position,
+}: {
+  keyword: string;
+  position: 'relative' | 'absolute';
+}) => {
   const [days, setDays] = useState<
     {now: boolean; day: number; index: number}[]
   >([]);
@@ -38,7 +51,7 @@ const Date = ({keyword}: {keyword: string}) => {
   }, [keyword]);
 
   return (
-    <Container>
+    <Container width={Dimensions.get('window').width} position={position}>
       {days.map(day => (
         <Day data={day} keyword={keyword} key={day.index} />
       ))}
