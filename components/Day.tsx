@@ -1,7 +1,7 @@
 import {Dimensions} from 'react-native';
 import styled from 'styled-components/native';
 import React from 'react';
-import {checkDate, initialStateProps} from '../store/slice';
+import {checkDay, initialStateProps} from '../store/slice';
 import {useDispatch, useSelector} from 'react-redux';
 
 const ContainerWrapper = styled.Pressable<{width: number}>`
@@ -42,9 +42,9 @@ const Day = ({
     <ContainerWrapper
       onPress={() => {
         if (data.day < 10) {
-          dispatch(checkDate(`${keyword}-0${data.day}`));
+          dispatch(checkDay(`${keyword}-0${data.day}`));
         }
-        dispatch(checkDate(`${keyword}-${data.day}`));
+        dispatch(checkDay(`${keyword}-${data.day}`));
       }}
       width={Dimensions.get('window').width}
       disabled={!data.now}>
